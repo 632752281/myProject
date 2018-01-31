@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context" 
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	  xmlns:task="http://www.springframework.org/schema/task"
+	   xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.2.xsd
+		http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-3.2.xsd
+		http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task.xsd
+		 http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.1.xsd">
+    
+    
+    <description>Spring MVC Configuration</description>
+    
+        <!-- 加载配置属性文件 -->
+	<context:property-placeholder ignore-unresolvable="true" location="classpath:jdbc.properties" />
+     <!-- proxy-target-class等于true是强制使用cglib代理，proxy-target-class默认是false，如果你的类实现了接口 就走JDK代理，如果没有，走cglib代理  -->
+     <!-- 注：对于单利模式建议使用cglib代理，虽然JDK动态代理比cglib代理速度快，但性能不如cglib -->
+	<!--   如果aspect切点切入的是controller在spring mvc 的配置中加入  -->
+	<!-- 最重要:::如果放在spring-context.xml中，这里的aop设置将不会生效     <aop:aspectj-autoproxy proxy-target-class="true" />--> 
+   <!-- 支持异步加载 -->  
+  	<!-- 启动对@AspectJ注解的支持 --> 
+    <aop:aspectj-autoproxy proxy-target-class="true" /> 
+     <!-- 开启AOP注解拦截 -->  <!--  同时开启 使用@ResponseBody可以实现同样的效果，实现同时返回多个对象的Json数据  -->
+    <mvc:annotation-driven />
+	 <!--  task任务扫描注解  -->
+	  <task:annotation-driven/>  
+    
+	 
+	<!-- 使用Annotation自动注册Bean,只扫描@Controller -->
+	<context:component-scan base-package="com.myProject" use-default-filters="false"><!-- base-package 如果多个，用“,”分隔 -->
+		<context:include-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+		<context:include-filter type="annotation" expression="org.springframework.stereotype.Service"/>
+	</context:component-scan>
+    
+    
+    
+    
+    
+	<!-- 默认的注解映射的支持，org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping -->
+	<mvc:annotation-driven content-negotiation-manager="contentNegotiationManager">
+		<mvc:message-converters register-defaults="true">
+			<!-- 将StringHttpMessageConverter的默认编码设为UTF-8 -->
+			<bean class="org.springframework.http.converter.StringHttpMessageConverter">
+		    	<constructor-arg value="UTF-8" />
+			</bean>
+			<!-- 将Jackson2HttpMessageConverter的默认格式化输出为false -->
+			<bean class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter">
+                <property name="supportedMediaTypes">
+                	<list><value>application/json;charset=UTF-8</value></list>
+                </property>
+                <property name="prettyPrint" value="false"/>
+            </bean>
+           <!--  使用XML格式输出数据 -->
+            <bean class="org.springframework.http.converter.xml.MarshallingHttpMessageConverter">
+		        <constructor-arg>
+		        	<bean class="org.springframework.oxm.xstream.XStreamMarshaller"></bean>
+		        </constructor-arg>
+		        <property name="supportedMediaTypes" value="application/xml"></property>
+			</bean>
+		</mvc:message-converters>
+	</mvc:annotation-driven>
+	
+   <!--  REST中根据URL后缀自动判定Content-Type及相应的View -->
+	<bean id="contentNegotiationManager" class="org.springframework.web.accept.ContentNegotiationManagerFactoryBean">
+	    <property name="mediaTypes" >
+	        <map> 
+                <entry key="xml" value="application/xml"/> 
+                <entry key="json" value="application/json"/> 
+            </map>
+	    </property>
+        <property name="ignoreAcceptHeader" value="true"/>
+        <property name="favorPathExtension" value="true"/>
+	</bean>
+	
+        
+        
+        
+        
+    <!--避免IE执行AJAX时，返回JSON出现下载文件 -->  
+  
+    <!-- <beanidbeanid="mappingJacksonHttpMessageConverter"  
+  
+       class="org.springframework.http.converter.json.MappingJacksonHttpMessageConverter">  
+  
+       <property name="supportedMediaTypes">  
+  
+           <list>  
+  
+              <value>text/html;charset=UTF-8</value>  
+  
+           </list>  
+  
+       </property>  
+  
+    </bean>   -->
+  
+    <!-- 启动SpringMVC的注解功能，完成请求和注解POJO的映射 -->  
+  
+    <!-- <bean  
+  
+       class="org.springframework.web.servlet.mvc.annotation.AnnotationMethodHandlerAdapter">  
+  
+       <property name="messageConverters">  
+  
+           <list>  
+  
+               <refbeanrefbean="mappingJacksonHttpMessageConverter" />   JSON转换器  
+  
+           </list>  
+  
+       </property>  
+  
+    </bean>  
+     -->
+    
+	<!-- 定义视图文件解析 -->
+	
+	
+	<bean  class="org.springframework.web.servlet.view.UrlBasedViewResolver">  
+		<property name="prefix" value="${web.view.prefix}"/>
+			<property name="suffix" value="${web.view.suffix}"/>
+	   <property name="viewClass" value="org.springframework.web.servlet.view.InternalResourceView"/>  
+    </bean>  
+
+	<!-- 对静态资源文件的访问， 将无法mapping到Controller的path交给default servlet handler处理 -->
+	<mvc:default-servlet-handler />
+	
+	<!-- 静态资源映射 -->
+    <mvc:resources mapping="/static/**" location="/static/" cache-period="31536000"/>
+	
+	<!-- 定义无Controller的path<->view直接映射 -->
+	<mvc:view-controller path="/" view-name="redirect:${web.view.index}"/>
+	
+	<!-- 拦截器配置，拦截顺序：先执行后定义的，排在第一位的最后执行。-->
+	<mvc:interceptors>
+		<mvc:interceptor>
+			<mvc:mapping path="${adminPath}/**" />
+			<mvc:exclude-mapping path="${adminPath}/"/>
+			<mvc:exclude-mapping path="${adminPath}/login"/>
+			<mvc:exclude-mapping path="${adminPath}/sys/menu/tree"/>
+			<mvc:exclude-mapping path="${adminPath}/sys/menu/treeData"/>
+			<mvc:exclude-mapping path="${adminPath}/oa/oaNotify/self/count"/>
+			<bean class="com.myProject.common.intercep.LogInterceptor" />
+		</mvc:interceptor>
+		<!-- 手机视图拦截器 -->
+		<mvc:interceptor>
+			<mvc:mapping path="/**" />
+			<bean class="com.myProject.common.intercep.MobileInterceptor" />
+		</mvc:interceptor>
+	</mvc:interceptors>
+	
+<!-- 	
+	上传文件拦截，设置最大上传文件大小   10M=10*1024*1024(B)=10485760 bytes  
+	<bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">  
+		<property name="maxUploadSize" value="${web.maxUploadSize}" />  
+	</bean>
+	
+	 -->
+	
+    
+    
+</beans> 

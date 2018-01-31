@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.myProject.modules.user.dao.UserDao">
+
+
+
+
+
+<select id="findPageList" parameterType="com.myProject.common.bean.Page" resultType="com.myProject.modules.user.bean.User">  
+    select 
+    user.id as "id",
+    user.name as "name",
+    user.pass as "pass"
+    
+    from sys_user user 
+    <where>  
+          1=1 
+        
+         <if test="object != null and object.id != null and object.id !=''">  
+            and user.id = #{object.id}  
+         </if>  
+           <if test="object != null and object.name != null and object.name !=''">  
+            and user.name like  CONCAT('%',  #{object.name}  , '%')
+         </if>  
+    </where>  
+  </select> 
+
+
+
+
+<select id="findUserByName" parameterType="java.lang.String" resultType="com.myProject.modules.user.bean.User">  
+    select 
+    user.id as "id",
+     user.name as "name",
+    user.pass as "pass"
+    
+    from sys_user user 
+    <where>  
+          user.name = #{name}  
+    </where>  
+  </select> 
+
+
+<select id="findRolesByName" parameterType="java.lang.String" resultType="java.lang.String">  
+    select 
+     role.name as "name"
+    from sys_user user ,
+     sys_role role,
+     sys_user_role userRole
+      WHERE 
+      role.id = userRole.role_id 
+      AND  user.id = userRole.user_id 
+      AND  user.name = #{name}  
+  </select> 
+  
+  
+
+<select id="findList" parameterType="com.myProject.modules.user.bean.User" resultType="com.myProject.modules.user.bean.User">  
+    select 
+    user.id as "id",
+    user.name as "name",
+    user.pass as "pass"
+    
+    from sys_user user 
+    <where>  
+          1=1 
+           <if test="name != null and name !=''">  
+             and user.name like  CONCAT('%',  #{name}  , '%')
+         </if>  
+    </where>  
+  </select> 
+
+
+
+
+<select id="findOne" parameterType="com.myProject.modules.user.bean.User" resultType="com.myProject.modules.user.bean.User">  
+    select 
+    user.id as "id",
+    user.name as "name",
+    user.pass as "pass"
+    
+    from sys_user user 
+    <where>  
+          user.id = #{id}  
+    </where>  
+  </select> 
+
+
+
+
+	
+</mapper>
